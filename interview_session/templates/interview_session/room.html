@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Live AI Interview Room</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { margin: 0; padding: 0; background: #000; color: #fff; font-family: 'Outfit', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+        
+        /* Immersive Visual Avatar CSS */
+        .avatar-container { position: relative; width: 300px; height: 300px; display: flex; justify-content: center; align-items: center; margin-bottom: 40px; }
+        .avatar-glow { position: absolute; width: 100%; height: 100%; border-radius: 50%; background: radial-gradient(circle, rgba(56,189,248,0.8) 0%, rgba(139,92,246,0) 70%); opacity: 0.5; transition: all 0.2s ease; }
+        .avatar-core { position: absolute; width: 120px; height: 120px; border-radius: 50%; background: #fff; box-shadow: 0 0 40px #38bdf8; transition: all 0.2s ease; z-index: 10; object-fit: cover; }
+        
+        /* Speaking State */
+        .avatar-core.speaking { transform: scale(1.1); box-shadow: 0 0 80px #8b5cf6; background: #e0e7ff; }
+        .avatar-glow.speaking { opacity: 1; transform: scale(1.2); background: radial-gradient(circle, rgba(139,92,246,0.8) 0%, rgba(0,0,0,0) 70%); }
+        
+        /* Listening State */
+        .avatar-core.listening { box-shadow: 0 0 50px #10b981; }
+        .avatar-glow.listening { background: radial-gradient(circle, rgba(16,185,129,0.5) 0%, rgba(0,0,0,0) 70%); opacity: 0.8; }
+        
+        /* UI Controls */
+        .controls { display: flex; gap: 20px; z-index: 20; }
+        button { padding: 16px 32px; border-radius: 50px; border: none; font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.1rem; cursor: pointer; transition: all 0.3s ease; }
+        .btn-start { background: #38bdf8; color: #0f172a; }
+        .btn-start:hover { background: #7dd3fc; transform: translateY(-2px); box-shadow: 0 10px 20px rgba(56,189,248,0.3); }
+        .btn-stop { background: #ef4444; color: white; display: none; }
+        .btn-dashboard { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); text-decoration: none; padding: 16px 32px; border-radius: 50px; font-weight: 600; font-size: 1rem; }
+        .btn-dashboard:hover { background: rgba(255,255,255,0.2); }
+        
+        /* Transcripts */
+        .transcript-box { position: absolute; bottom: 60px; width: 80%; max-width: 800px; padding: 20px; text-align: center; z-index: 20; }
+        .transcript-text { font-size: 1.2rem; line-height: 1.6; color: #cbd5e1; font-style: italic; }
+        .ai-text { color: #f8fafc; font-weight: 600; font-size: 1.6rem; margin-bottom: 15px; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+        
+        /* Loading Indicator */
+        .loading-text { font-size: 0.9rem; color: #94a3b8; display: none; letter-spacing: 2px; text-transform: uppercase; animation: pulse 1s infinite alternate; }
+        @keyframes pulse { from { opacity: 0.5; } to { opacity: 1; } }
+
+        /* Top Bar */
+        .top-bar { position: absolute; top: 20px; width: 100%; display: flex; justify-content: space-between; padding: 0 40px; box-sizing: border-box; }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <div style="font-size: 1.2rem; font-weight: 600; color: #38bdf8;">Interview Portal</div>
+        <div style="color: #94a3b8;">Candidate: <span style="color: white; font-weight: 600;">{{ candidate_name }}</span></div>
+    </div>
+
+        <!-- Free CSS-based Visual Avatar -->
+    <div class="avatar-container" id="avatarBox">
+        <div class="avatar-glow" id="avatarGlow"></div>
+        <img class="avatar-core" id="avatarCore" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23ffffff'/><circle cx='50' cy='50' r='40' fill='%23e0e7ff'/><circle cx='35' cy='40' r='8' fill='%2338bdf8'/><circle cx='65' cy='40' r='8' fill='%2338bdf8'/><path d='M 35 65 Q 50 75 65 65' stroke='%2338bdf8' stroke-width='5' fill='none' stroke-linecap='round'/></svg>" alt="AI">
+        <div class="avatar-core" id="avatarFallback" style="display: none;"></div>
+    </div>
+
+    <div class="controls">
+        <button class="btn-start" id="startBtn">Start Interview</button>
+        <button class="btn-stop" id="stopBtn">End Interview</button>
+        <a href="{% url 'candidates:hr_dashboard' %}" class="btn-dashboard">HR Dashboard</a>
+    </div>
+
+    <div class="loading-text" id="loadingText">AI is processing...</div>
+
+    <div class="transcript-box">
+        <div class="ai-text" id="aiTranscript">Welcome to your interview, {{ candidate_name }}. Click Start when ready.</div>
+        <div class="transcript-text" id="userTranscript"></div>
+    </div>
+
+    <script>
+        const candidateText = `{{ candidate_text|escapejs }}`;
+        let chatHistory = [];
+        
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const aiTranscript = document.getElementById('aiTranscript');
+        const userTranscript = document.getElementById('userTranscript');
+        const avatarCore = document.getElementById('avatarCore');
+        const avatarFallback = document.getElementById('avatarFallback');
+        const avatarGlow = document.getElementById('avatarGlow');
+        const loadingText = document.getElementById('loadingText');
+        
+        // --- 1. SETUP SPEECH RECOGNITION (MIC TO TEXT) ---
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition = null;
+        if(SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = false; // Stop listening after one phrase to respond
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+        } else {
+            alert("Speech Recognition API not supported in this browser. Please use Chrome/Edge.");
+        }
+
+        let isInterviewing = false;
+
+        // --- 2. AVATAR ANIMATION STATE MANAGER ---
+        function setAvatarState(state) {
+            avatarCore.className = 'avatar-core';
+            avatarFallback.className = 'avatar-core';
+            avatarGlow.className = 'avatar-glow';
+            
+            if(state === 'speaking') {
+                avatarCore.classList.add('speaking');
+                avatarFallback.classList.add('speaking');
+                avatarGlow.classList.add('speaking');
+                loadingText.style.display = 'none';
+            } else if(state === 'listening') {
+                avatarCore.classList.add('listening');
+                avatarFallback.classList.add('listening');
+                avatarGlow.classList.add('listening');
+                loadingText.textContent = "Listening to your answer...";
+                loadingText.style.display = 'block';
+                loadingText.style.color = '#10b981';
+            } else if(state === 'thinking') {
+                loadingText.textContent = "AI is thinking...";
+                loadingText.style.display = 'block';
+                loadingText.style.color = '#38bdf8';
+            } else {
+                loadingText.style.display = 'none';
+            }
+        }
+
+        // --- 3. SPEECH SYNTHESIS (TEXT TO SPEECH) ---
+        const synth = window.speechSynthesis;
+        function speakText(text) {
+            return new Promise((resolve) => {
+                if (synth.speaking) synth.cancel();
+                
+                const utterance = new SpeechSynthesisUtterance(text);
+                
+                // Find a decent voice (Prioritize Indian English Female)
+                const voices = synth.getVoices();
+                let selectedVoice = voices.find(v => (v.lang.includes('en-IN') && (v.name.includes('Female') || v.name.includes('Neerja'))) || v.name.includes('Veena'));
+                if(!selectedVoice) selectedVoice = voices.find(v => v.lang.includes('en-IN'));
+                if(!selectedVoice) selectedVoice = voices.find(v => v.lang.includes('en') && v.name.includes('Female'));
+                if(!selectedVoice) selectedVoice = voices[0];
+                if(selectedVoice) utterance.voice = selectedVoice;
+                
+                utterance.rate = 1.05;
+                utterance.pitch = 1.1;
+
+                utterance.onstart = () => setAvatarState('speaking');
+                utterance.onend = () => {
+                    setAvatarState('idle');
+                    resolve();
+                };
+                utterance.onerror = () => resolve();
+
+                setAvatarState('speaking');
+                aiTranscript.textContent = text;
+                aiTranscript.style.color = "#f8fafc";
+                synth.speak(utterance);
+            });
+        }
+
+        // --- 4. BACKEND API CALL ---
+        async function sendToAI(userMsg) {
+            setAvatarState('thinking');
+            try {
+                const response = await fetch('/interview/api/chat/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: userMsg,
+                        history: chatHistory,
+                        candidate_text: candidateText
+                    })
+                });
+                
+                const data = await response.json();
+                if(data.error) {
+                    speakText("Sorry, I encountered an error. Check the API key console.");
+                } else {
+                    chatHistory = data.history;
+                    await speakText(data.response);
+                    
+                    // Once AI finishes speaking, start listening again automatically
+                    if(isInterviewing && recognition) {
+                        // Small delay to prevent listening to its own echo
+                        setTimeout(() => {
+                            try { recognition.start(); } catch(err) {} 
+                            setAvatarState('listening');
+                        }, 500);
+                    }
+                }
+            } catch(e) {
+                console.error(e);
+                speakText("My connection was interrupted.");
+            }
+        }
+
+        // --- 5. EVENT LISTENERS ---
+        startBtn.addEventListener('click', () => {
+            isInterviewing = true;
+            startBtn.style.display = 'none';
+            stopBtn.style.display = 'inline-block';
+            chatHistory = [];
+            
+            // Kickoff context (hidden from user)
+            sendToAI("__START_INTERVIEW__");
+        });
+
+        stopBtn.addEventListener('click', () => {
+            isInterviewing = false;
+            startBtn.style.display = 'inline-block';
+            stopBtn.style.display = 'none';
+            if(recognition) recognition.stop();
+            if(synth) synth.cancel();
+            setAvatarState('idle');
+            aiTranscript.textContent = "Interview Ended. The HR team will contact you soon.";
+        });
+
+        // Handle Speech Recognition Results
+        if(recognition) {
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                userTranscript.textContent = `You: "${transcript}"`;
+                // Stop listening and process
+                recognition.stop();
+                sendToAI(transcript);
+            };
+            
+            recognition.onerror = (event) => {
+                console.error("Speech recognition error", event.error);
+                if(isInterviewing && event.error !== 'no-speech' && event.error !== 'aborted') {
+                    // Try to restart if error was transient
+                    setTimeout(() => { try{ recognition.start(); } catch(err){} }, 1000);
+                }
+            };
+            
+            recognition.onend = () => {
+                // If it ended due to silence and we are still in listening mode, restart it
+                if(document.getElementById('avatarCore').classList.contains('listening') && isInterviewing) {
+                   try{ recognition.start(); } catch(err){}
+                }
+            };
+        }
+        
+        // Safari/Chrome safety hook to ensure voices load
+        speechSynthesis.onvoiceschanged = () => { console.log("Speech voices actively loaded."); };
+    </script>
+</body>
+</html>

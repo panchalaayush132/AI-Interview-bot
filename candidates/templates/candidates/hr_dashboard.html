@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HR Dashboard | Leaderboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: #09090b; color: #f8fafc; font-family: 'Outfit', sans-serif;
+            margin: 0; padding: 40px;
+        }
+        h1 { text-align: center; font-weight: 800; font-size: 2.5rem; margin-bottom: 40px; color: #e2e8f0; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        
+        .table-container {
+            background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px; overflow: hidden;
+        }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: rgba(255, 255, 255, 0.05); text-align: left; padding: 16px 24px; color: #94a3b8; font-weight: 600; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1px; }
+        td { padding: 20px 24px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+        tr { transition: background 0.3s; }
+        tr:hover { background: rgba(255, 255, 255, 0.05); }
+        
+        .rank { font-weight: 800; font-size: 1.2rem; color: #cbd5e1; }
+        .rank-1 { color: #fbbf24; text-shadow: 0 0 10px rgba(251, 191, 36, 0.5); }
+        .rank-2 { color: #94a3b8; }
+        .rank-3 { color: #b45309; }
+        
+        .score-pill {
+            display: inline-block; padding: 6px 12px; border-radius: 20px; font-weight: 800; font-size: 0.9rem;
+        }
+        .score-high { background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.2); }
+        .score-mid { background: rgba(245, 158, 11, 0.1); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.2); }
+        .score-low { background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.2); }
+        
+        .resume-link { color: #38bdf8; text-decoration: none; font-weight: 600; }
+        .resume-link:hover { text-decoration: underline; }
+        
+        .feedback { font-size: 0.85rem; color: #94a3b8; line-height: 1.5; max-width: 300px; }
+        .empty { text-align: center; padding: 40px; color: #64748b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI Candidates Leaderboard</h1>
+        
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Candidate</th>
+                        <th>Score</th>
+                        <th>AI Feedback</th>
+                        <th>Resume</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for candidate in candidates %}
+                    <tr>
+                        <td class="rank {% if forloop.counter == 1 %}rank-1{% elif forloop.counter == 2 %}rank-2{% elif forloop.counter == 3 %}rank-3{% endif %}">
+                            #{{ forloop.counter }}
+                        </td>
+                        <td>
+                            <div style="font-weight: 600; color: #e2e8f0; margin-bottom: 4px;">{{ candidate.name }}</div>
+                            <div style="font-size: 0.85rem; color: #64748b;">{{ candidate.email }}</div>
+                        </td>
+                        <td>
+                            <span class="score-pill {% if candidate.gemini_score >= 80 %}score-high{% elif candidate.gemini_score >= 60 %}score-mid{% else %}score-low{% endif %}">
+                                {{ candidate.gemini_score }}/100
+                            </span>
+                        </td>
+                        <td><div class="feedback">{{ candidate.feedback_summary }}</div></td>
+                        <td>
+                            {% if candidate.resume_file %}
+                            <a href="{{ candidate.resume_file.url }}" class="resume-link" target="_blank">View PDF</a>
+                            {% else %}
+                            <span style="color: #475569;">No file</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="empty">No candidates have been evaluated yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

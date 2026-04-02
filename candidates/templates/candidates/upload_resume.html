@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Interview Portal | Upload Resume</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            color: #f8fafc;
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        .orb {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(139,92,246,0.3) 0%, rgba(0,0,0,0) 70%);
+            animation: float 8s ease-in-out infinite alternate;
+            z-index: 0;
+        }
+        .orb:nth-child(2) { right: -50px; bottom: -50px; animation-delay: -4s; background: radial-gradient(circle, rgba(56,189,248,0.3) 0%, rgba(0,0,0,0) 70%); }
+        @keyframes float { 0% { transform: translateY(0px) scale(1); } 100% { transform: translateY(-30px) scale(1.1); } }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            border-radius: 24px;
+            padding: 50px;
+            width: 100%;
+            max-width: 450px;
+            z-index: 10;
+            animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(40px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        
+        h1 { margin-top: 0; font-weight: 800; font-size: 2rem; text-align: center; background: linear-gradient(to right, #a78bfa, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        p.subtitle { text-align: center; color: #94a3b8; font-size: 0.95rem; margin-bottom: 30px; line-height: 1.5; }
+        
+        .input-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem; color: #cbd5e1; }
+        input[type="text"], input[type="email"] {
+            width: 100%; padding: 14px 16px; border-radius: 12px;
+            background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white; font-family: 'Outfit', sans-serif; font-size: 1rem;
+            box-sizing: border-box; transition: all 0.3s ease;
+        }
+        input[type="text"]:focus, input[type="email"]:focus { outline: none; border-color: #8b5cf6; box-shadow: 0 0 15px rgba(139, 92, 246, 0.3); }
+        
+        .file-upload {
+            position: relative; overflow: hidden; display: inline-block; width: 100%;
+            background: rgba(15, 23, 42, 0.6); border: 1px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 12px; padding: 20px 16px; text-align: center; box-sizing: border-box;
+            transition: all 0.3s ease; cursor: pointer; color: #cbd5e1;
+        }
+        .file-upload:hover { border-color: #38bdf8; background: rgba(56, 189, 248, 0.05); }
+        .file-upload input[type="file"] { position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; height: 100%; width: 100%; }
+        
+        button {
+            width: 100%; padding: 16px; margin-top: 10px; border-radius: 12px;
+            background: linear-gradient(135deg, #8b5cf6, #3b82f6); border: none;
+            color: white; font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.1rem;
+            cursor: pointer; transition: all 0.3s ease;
+        }
+        button:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(59, 130, 246, 0.4); }
+        button:active { transform: translateY(0); }
+    </style>
+</head>
+<body>
+    <div class="orb"></div>
+    <div class="orb"></div>
+    
+    <div class="glass-card">
+        <h1>AI Interviewer</h1>
+        <p class="subtitle">Upload your resume. Our Gemini AI will analyze your profile and prepare a custom interview experience.</p>
+        
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="input-group">
+                <label for="name">Full Name</label>
+                <input type="text" id="name" name="name" required placeholder="Jane Doe">
+            </div>
+            <div class="input-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" required placeholder="jane@example.com">
+            </div>
+            <div class="input-group">
+                <label>Resume (PDF)</label>
+                <div class="file-upload">
+                    <span>Drop your resume here or click to browse</span>
+                    <input type="file" id="resume_file" name="resume_file" accept=".pdf" required>
+                </div>
+            </div>
+            <button type="submit">Analyze Profile</button>
+        </form>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('resume_file');
+        const fileText = document.querySelector('.file-upload span');
+        fileInput.addEventListener('change', function() {
+            if(this.files && this.files.length > 0) {
+                fileText.textContent = this.files[0].name;
+                fileText.style.color = '#38bdf8';
+            }
+        });
+    </script>
+</body>
+</html>
