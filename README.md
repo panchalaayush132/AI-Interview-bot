@@ -1,137 +1,170 @@
-# AI Interview System
-live at edusycide.tech
-An intelligent interview platform that leverages Google's Gemini AI to automate resume analysis and conduct personalized technical interviews.
+# SpeakFast Local (Django)
+
+Offline adaptive spoken-English learning app for any native-language learner.
+
+## Live Production
+- https://www.edusycide.tech
 
 ## Features
+- Local-only Django app (no API dependency)
+- English-first learning design (works for any native language)
+- Adaptive placement test to auto-assign level
+- 5-level track: Starter, Beginner, Intermediate, Advanced, Expert
+- Lesson-wise phrases with usage tips
+- Quiz per lesson with instant review
+- Session-based learner profile (name)
+- XP, streak, and focus-session tracking (motivation loop)
+- Level-locked progression for challenge pacing
+- English Tutor Chat that talks back, corrects, and teaches locally
+- Talk Mode for step-by-step speaking practice and live teaching
+- Mistake practice mode from wrong answers
+- Admin panel to manage lessons and questions
 
-### Resume Analysis
-- **AI-Powered Scoring**: Automatically analyzes uploaded resumes using Gemini AI
-- **Feedback Generation**: Provides detailed feedback on candidate qualifications
-- **Text Extraction**: Extracts text from PDF resumes for analysis
+## Tech
+- Python 3.14+
+- Django 5
+- SQLite (default local database)
 
-### Interview Management
-- **AI Interviewer**: Conducts structured technical interviews based on candidate resumes
-- **Real-time Chat**: Interactive interview sessions with conversational AI
-- **Context-Aware Questions**: Questions tailored to the candidate's background and skills
+No external database is required. SQLite is enough for the current offline version.
 
-### HR Dashboard
-- **Candidate Overview**: View all candidates sorted by AI-generated scores
-- **Resume Management**: Centralized storage and access to candidate resumes
-- **Scoring Insights**: Detailed feedback and scoring for each candidate
-
-## Tech Stack
-
-- **Backend**: Django 6.0
-- **AI Engine**: Google Gemini AI
-- **Database**: SQLite3
-- **PDF Processing**: PyMuPDF (fitz)
-- **Frontend**: HTML/CSS/JavaScript (Django templates)
-
-## Prerequisites
-
-- Python 3.8+
-- Google Gemini API key
-
-## Installation
-
-1. **Clone the repository**:
-   ```bash
-   git clone <repository-url>
-   cd interview
+## Setup
+1. Open terminal in project folder.
+2. Install dependencies:
+   ```powershell
+   c:/python314/python.exe -m pip install -r requirements.txt
    ```
-
-2. **Create and activate virtual environment**:
-   ```bash
-   python -m venv venv
-   # On Windows:
-   venv\Scripts\activate
-   # On macOS/Linux:
-   source venv/bin/activate
+3. Run migrations:
+   ```powershell
+   c:/python314/python.exe manage.py makemigrations
+   c:/python314/python.exe manage.py migrate
    ```
-
-3. **Install dependencies**:
-   ```bash
-   pip install django python-dotenv google-generativeai PyMuPDF
+4. Seed starter lesson data:
+   ```powershell
+   c:/python314/python.exe manage.py seed_learning_data
    ```
-
-4. **Set up environment variables**:
-   - Copy the `.env` file and update it with your Gemini API key:
+5. Run server:
+   ```powershell
+   c:/python314/python.exe manage.py runserver
    ```
-   GEMINI_API_KEY=your_actual_gemini_api_key_here
-   ```
+6. Open: http://127.0.0.1:8000/
 
-5. **Run database migrations**:
-   ```bash
-   python manage.py makemigrations
-   python manage.py migrate
-   ```
-
-6. **Start the development server**:
-   ```bash
-   python manage.py runserver
-   ```
-
-7. **Access the application**:
-   - Open your browser and go to `http://127.0.0.1:8000`
-
-## Usage
-
-### For Candidates
-1. Navigate to the resume upload page
-2. Fill in your name and email
-3. Upload your resume (PDF format)
-4. View your AI-generated score and feedback
-
-### For HR/Interviewers
-1. Access the HR dashboard to view all candidates
-2. Review AI scores and feedback
-3. Conduct interviews using the interview room feature
-
-### Interview Process
-1. The AI interviewer starts with basic introduction questions
-2. Progresses to technical questions based on the candidate's resume
-3. Maintains conversation context throughout the interview
-4. Asks one question at a time for focused responses
-
-## API Configuration
-
-The application uses Google's Gemini AI API. To get an API key:
-
-1. Visit [Google AI Studio](https://makersuite.google.com/app/apikey)
-2. Create a new API key
-3. Add the key to your `.env` file as `GEMINI_API_KEY`
-
-## Project Structure
-
+## Admin Access (Optional)
+Create admin user:
+```powershell
+c:/python314/python.exe manage.py createsuperuser
 ```
-interview/
-├── core/                    # Django project settings
-├── candidates/             # Resume upload and analysis app
-│   ├── models.py          # Candidate model
-│   ├── views.py           # Upload and dashboard views
-│   ├── gemini_service.py  # AI resume analysis
-│   └── templates/         # HTML templates
-├── interview_session/      # Interview chat app
-│   ├── gemini_chat.py     # AI interviewer logic
-│   ├── views.py           # Interview room views
-│   └── templates/         # Interview interface
-├── media/                  # Uploaded files storage
-└── db.sqlite3             # Database file
+Then open: http://127.0.0.1:8000/admin/
+
+## Where to add your own data
+- Use Django admin to add/edit:
+   - Placement questions
+  - Lessons
+  - Phrases
+  - Quiz questions
+   - Speaking prompts
+
+## Suggested next upgrades
+- Add pronunciation recording and local scoring
+- Add spaced repetition scheduler
+- Add downloadable PDF worksheets
+
+## Use Installed Ollama Model In Tutor Chat
+If you already installed a model, Tutor Chat can use it directly.
+
+Set these environment variables before running Django:
+
+```powershell
+$env:OLLAMA_URL = "http://127.0.0.1:11434/api/generate"
+$env:OLLAMA_MODEL = "qwen2.5:3b"
+$env:OLLAMA_TIMEOUT_SECONDS = "45"
 ```
 
-## Contributing
+Then run:
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
+```powershell
+c:/python314/python.exe manage.py runserver
+```
 
-## License
+Notes:
+- If Ollama is unavailable, the tutor automatically falls back to local rule-based teaching.
+- Keep model size small (3B/4B) for 4 GB VRAM devices.
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+## Talk Mode
+Talk Mode is the interactive teaching flow.
+It can speak the question aloud and listen to your voice reply in the browser.
 
-## Disclaimer
+Open:
 
-This tool is designed to assist with the interview process but should not replace human judgment. Always review AI-generated assessments and conduct thorough interviews.</content>
-<parameter name="filePath">d:\Main coding\python\AI\interview\README.md
+```powershell
+http://127.0.0.1:8000/talk-mode/
+```
+
+Use it to:
+- practice short spoken English replies
+- get instant grammar correction
+- keep a back-and-forth teaching conversation
+- speak the question aloud and answer by microphone
+- start from very basic Q&A for weak beginners, then move to harder questions automatically
+
+Best browsers for voice mode:
+- Google Chrome
+- Microsoft Edge
+
+If voice recognition is not supported, type your reply in the box instead.
+
+## Deploy On Vercel
+You can deploy this Django app on Vercel.
+
+### Live Production URL
+- https://www.edusycide.tech
+
+### 1) Push to GitHub
+Push this project to a GitHub repository.
+
+### 1.1) Show Deployment URL On GitHub
+- Open your repository on GitHub.
+- In About (right side), click the settings/gear icon.
+- Set Website to https://www.edusycide.tech and save.
+- This shows the production link in the repository header.
+
+### 2) Create a Vercel Project
+- Open Vercel dashboard.
+- Import your GitHub repository.
+- Framework preset: Other.
+
+### 3) Set Environment Variables In Vercel
+Add these variables in Project Settings -> Environment Variables:
+
+- `SECRET_KEY` = your strong secret key
+- `DEBUG` = `False`
+- `ALLOWED_HOSTS` = your production domains, for example `www.edusycide.tech,edusycide.tech,your-app.vercel.app`
+- `CSRF_TRUSTED_ORIGINS` = `https://www.edusycide.tech,https://edusycide.tech,https://your-app.vercel.app`
+
+Optional for AI tutor:
+- `OLLAMA_URL`
+- `OLLAMA_MODEL`
+- `OLLAMA_TIMEOUT_SECONDS`
+
+### 4) Database Choice (Important)
+- SQLite is not suitable for persistent production data on serverless platforms.
+- Use PostgreSQL (Neon/Supabase/Render Postgres).
+- Add `DATABASE_URL` in Vercel environment variables.
+
+### 5) Build And Migrate
+In Vercel build/deploy command flow, run:
+
+```bash
+python manage.py migrate
+python manage.py collectstatic --noinput
+```
+
+### 6) Deploy
+Redeploy the project after setting variables.
+
+After deploy, open your Vercel URL and test:
+- Home
+- Placement Test
+- Dataset Quiz
+- Games
+- Talk Mode
+#
